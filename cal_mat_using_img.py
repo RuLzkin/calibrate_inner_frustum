@@ -91,8 +91,8 @@ rgb_output = np.stack([
 # print(mat_b[:3, :3])
 # print(np.linalg.pinv(mat_b[:3, :3]))
 
-# mat_okawa = method_okawa(rgb_input, rgb_output)
-# mat_ue = method_ue(rgb_input, rgb_output)
+mat_okawa = method_okawa(rgb_input, rgb_output)
+mat_ue = method_ue(rgb_input, rgb_output)
 
 # img_okawa = convert_matrix(img_a, np.linalg.inv(mat_okawa))
 # img_ue = convert_matrix(img_a, np.linalg.inv(mat_ue))
