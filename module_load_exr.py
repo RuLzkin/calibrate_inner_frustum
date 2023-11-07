@@ -2,6 +2,7 @@ import array
 import OpenEXR
 import Imath
 import numpy as np
+from tqdm import trange
 
 
 def load_exr(path):
@@ -27,3 +28,27 @@ def load_exr(path):
     ndarr_RGB = ndarr_RGB.reshape(size[1], size[0], 3)
 
     return ndarr_RGB
+
+
+def convert_matrix(img, matrix):
+    out = np.zeros(img.shape)
+    for _i in trange(img.shape[0]):
+        for _j in range(img.shape[1]):
+            out[_i, _j, :] = np.dot(matrix, img[_i, _j, :])
+    return out
+
+
+def method_okawa(input, output):
+    output /= output.max()
+    return np.linalg.inv(np.dot(output, np.linalg.pinv(input)))
+
+
+def method_ue(input, output):
+    W = output[:, 3]
+    output = output[:, :3]
+    Imat = np.linalg.inv(output)
+    Wnor = W / W.max()
+    S = np.dot(Imat, Wnor)
+    Smat = np.diag(S)
+    C = np.dot(Smat, output)
+    return np.linalg.inv(C)
