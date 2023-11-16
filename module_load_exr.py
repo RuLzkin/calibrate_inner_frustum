@@ -30,6 +30,14 @@ def load_exr(path):
     return ndarr_RGB
 
 
+def preview_exr(path):
+    img = load_exr(path)
+    from matplotlib import pyplot as plt
+    plt.figure()
+    plt.imshow(img)
+    plt.show()
+
+
 def convert_matrix(img, matrix):
     out = np.zeros(img.shape)
     for _i in trange(img.shape[0]):
