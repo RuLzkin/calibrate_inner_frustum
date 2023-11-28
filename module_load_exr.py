@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import trange
 
 
-def load_exr(path):
+def load_exr(path: str):
     exr = OpenEXR.InputFile(path)
 
     dw = exr.header()['dataWindow']
@@ -30,11 +30,14 @@ def load_exr(path):
     return ndarr_RGB
 
 
-def preview_exr(path, show=False):
+def preview_exr(path: str, show: bool = False, amp: float = 1.0):
     img = load_exr(path)
     from matplotlib import pyplot as plt
     plt.figure()
-    plt.imshow(img)
+    if amp is None:
+        plt.imshow(img / img.max())
+    else:
+        plt.imshow(amp * img)
     if show:
         plt.show()
 
