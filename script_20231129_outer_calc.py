@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.optimize import leastsq
 from module_load_exr import preview_exr, load_exr
 from matplotlib import pyplot as plt
 
@@ -30,7 +31,7 @@ iijj_babel = [
     [1400, 1600, 2350, 2631],
     [1400, 1600, 2695, 3013],
     [1400, 1600, 3087, 3458],  # 18
-    [1850, 1950, 1536, 1727],
+    [1850, 1950, 1536, 1727],  # 19
     [1850, 1950, 1781, 1992],
     [1850, 1950, 2045, 2294],
     [1850, 1950, 2348, 2627],
@@ -64,16 +65,16 @@ mat_rgb2xyz = np.array([
 
 mat_xyz2rgb = np.linalg.pinv(mat_rgb2xyz)
 
-mat_cc_rgb = np.zeros_like(mat_cc_xyz)
+img_cc_rgb = np.zeros_like(mat_cc_xyz)
 for _i in range(4):
     for _j in range(6):
-        mat_cc_rgb[_i, _j, :] = np.dot(mat_xyz2rgb, np.squeeze(mat_cc_xyz[_i, _j, :])[:, None]).squeeze()
+        img_cc_rgb[_i, _j, :] = np.dot(mat_xyz2rgb, np.squeeze(mat_cc_xyz[_i, _j, :])[:, None]).squeeze()
 
-mat_preview = np.zeros_like(mat_cc_rgb)
+img_captured_w = np.zeros_like(mat_cc_xyz)
 _n = 0
 for _i in range(4):
     for _j in range(6):
-        mat_preview[_i, _j, :] = list_rgb_w[_n]
+        img_captured_w[_i, _j, :] = list_rgb_w[_n]
         _n += 1
 
 print(mat_cc_xyz.shape)
@@ -82,17 +83,62 @@ print(mat_cc_xyz.shape)
 # preview_exr("C:/Dropbox/TOEI/20231122_Outer_patch/For_OuterCalib_G.76.exr")
 # preview_exr("C:/Dropbox/TOEI/20231122_Outer_patch/For_OuterCalib_R.31.exr")
 preview_exr("C:/Dropbox/TOEI/20231122_Outer_patch/For_OuterCalib_W.258.exr", show=False, amp=5)
-plt.figure()
-plt.subplot(2, 1, 1)
-plt.imshow(mat_cc_rgb / mat_cc_rgb.max())
-plt.title("From Colorchart")
-plt.subplot(2, 1, 2)
-plt.imshow(mat_preview / mat_preview.max())
-plt.title("From Actual Image")
-plt.tight_layout()
+
 
 w_avg = list_rgb_w[18]
 mat_M = np.eye(3)
 beta = .0311
+mat_cc = img_cc_rgb.reshape((1, 24, 3)).squeeze().T
+
+list_srl = []
+for _i in range(24):
+    list_srl.append(np.concatenate([
+        list_rgb_r[_i][None, :],
+        list_rgb_g[_i][None, :],
+        list_rgb_b[_i][None, :],
+    ]))
+
+
+def func_fit(q: np.ndarray, beta, mat_M, w_avg, list_srl, mat_cc):
+    mat_q = q.reshape((3, 3))
+    val: np.ndarray = np.zeros((3, 24))
+    for _i in range(len(list_srl)):
+        _buf = np.dot(mat_q, list_srl[_i])
+        _buf = np.dot(_buf, mat_M)
+        _buf = np.dot(_buf, w_avg[:, None]) / beta
+        val[:, _i] = _buf.ravel() - mat_cc[:, _i]
+    return val.flatten()
+
+
+q_initiate = np.eye(3).reshape(9)
+
+q_flat, cov = leastsq(func_fit, q_initiate, args=(beta, mat_M, w_avg, list_srl, mat_cc))
+mat_q = q_flat.reshape((3, 3))
+
+img_calibrated = np.zeros_like(img_cc_rgb)
+_n = 0
+for _i in range(4):
+    for _j in range(6):
+        _buf = np.dot(mat_q, list_srl[_n])
+        _buf = np.dot(_buf, mat_M)
+        _buf = np.dot(_buf, w_avg[:, None]) / beta
+        img_calibrated[_i, _j, :] = _buf.ravel()
+        _n += 1
+
+norm_max = np.max([img_cc_rgb.max(), img_captured_w.max(), img_calibrated.max()])
+
+plt.figure()
+plt.subplot(2, 2, 1)
+plt.imshow(img_cc_rgb / norm_max)
+plt.title("From X-Rite")
+plt.subplot(2, 2, 3)
+plt.imshow(img_captured_w / norm_max)
+plt.title("From Actual Image")
+plt.subplot(2, 2, 4)
+plt.imshow(img_calibrated / norm_max)
+plt.title("Calibrated")
+plt.tight_layout()
+
+print(mat_q)
 
 plt.show()
