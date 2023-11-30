@@ -5,8 +5,6 @@ from matplotlib import pyplot as plt
 
 # https://technorgb.blogspot.com/2017/10/blog-post.html
 
-"""WIP"""
-
 img_cc_w = load_exr("C:/Dropbox/TOEI/20231122_Outer_patch/For_OuterCalib_W.258.exr")
 img_cc_r = load_exr("C:/Dropbox/TOEI/20231122_Outer_patch/For_OuterCalib_R.31.exr")
 img_cc_g = load_exr("C:/Dropbox/TOEI/20231122_Outer_patch/For_OuterCalib_G.76.exr")
@@ -77,16 +75,15 @@ for _i in range(4):
         img_captured_w[_i, _j, :] = list_rgb_w[_n]
         _n += 1
 
-print(mat_cc_xyz.shape)
-
-# preview_exr("C:/Dropbox/TOEI/20231122_Outer_patch/For_OuterCalib_B.184.exr")
-# preview_exr("C:/Dropbox/TOEI/20231122_Outer_patch/For_OuterCalib_G.76.exr")
-# preview_exr("C:/Dropbox/TOEI/20231122_Outer_patch/For_OuterCalib_R.31.exr")
 preview_exr("C:/Dropbox/TOEI/20231122_Outer_patch/For_OuterCalib_W.258.exr", show=False, amp=5)
 
 
 w_avg = list_rgb_w[18]
-mat_M = np.eye(3)
+mat_M = np.array([
+    [1.09136992, -0.08069022, 0.07834191],
+    [-0.02922144, 1.06632919, 0.03986785],
+    [-0.13762941, 0.08237132, 1.19472909]]
+)
 beta = .0311
 mat_cc = img_cc_rgb.reshape((1, 24, 3)).squeeze().T
 
@@ -139,6 +136,7 @@ plt.imshow(img_calibrated / norm_max)
 plt.title("Calibrated")
 plt.tight_layout()
 
-print(mat_q)
+print("matrix Q:\n", mat_q)
+print("matrix N:\n", np.dot(mat_M, np.linalg.pinv(mat_q)))
 
 plt.show()
