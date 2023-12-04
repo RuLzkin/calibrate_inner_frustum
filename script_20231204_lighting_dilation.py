@@ -31,7 +31,7 @@ for _c, _color in enumerate(["RED", "GREEN", "BLUE"]):
     flag_continue = True
     _n = 0
     plt_img = list_ax[0, _c].imshow(hdri_input, vmin=0, vmax=1.0)
-    plt_lbl = list_ax[1, _c].imshow(labels)
+    plt_lbl = list_ax[1, _c].imshow((labels / n_labels) ** 0.1)
     while flag_continue:
         flag_continue = False
         _sum_dilated = 0
@@ -59,7 +59,7 @@ for _c, _color in enumerate(["RED", "GREEN", "BLUE"]):
         _tint = np.zeros(3)
         _tint[_c] = 1
         plt_img.set_data(np.maximum(0, np.minimum(1.0, hdri_output)) * _tint[None, None, :])
-        plt_lbl.set_data(labels)
+        plt_lbl.set_data((labels / n_labels) ** 0.1)
         list_ax[0, _c].set_title("iter: {0}, {1}".format(_n, _color))
         # fig.tight_layout()
         plt.pause(0.01)
