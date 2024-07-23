@@ -55,6 +55,15 @@ def method_okawa(input, output):
     return np.linalg.inv(np.dot(output, np.linalg.pinv(input)))
 
 
+def method_okawa_newcms(input, output):
+    # buf_output = output / output.max() * 10.0
+    buf_output = output.copy()
+    buf_return = np.linalg.inv(np.dot(buf_output, np.linalg.pinv(input)))
+    if buf_return.shape[0] > 3:
+        buf_return[3, :] = [0, 0, 0, 1]
+    return buf_return
+
+
 def method_ue(input, output):
     W = output[:, 3]
     output = output[:, :3]
