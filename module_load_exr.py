@@ -51,8 +51,9 @@ def convert_matrix(img, matrix):
 
 
 def method_okawa(input, output):
-    output /= output.max()
-    return np.linalg.inv(np.dot(output, np.linalg.pinv(input)))
+    # output /= output.max()
+    buff_output = output / output.max()
+    return np.linalg.inv(np.dot(buff_output, np.linalg.pinv(input)))
 
 
 def method_ue(input, output):
