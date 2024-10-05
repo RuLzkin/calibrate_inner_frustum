@@ -64,6 +64,8 @@ def path_to_matrix_m(path_input: str, path_output: str, show_comparison: bool = 
 
 def comparison(vec_cms_input, vec_cms_output, suptitle):
 
+    vec_norm = np.linalg.norm(vec_cms_input - vec_cms_output, axis=0)
+
     plt.figure(figsize=(9, 6))
     plt.subplot(3, 2, 1)
     plt.plot(vec_cms_input[:, 0], "r", label="Red")
@@ -85,21 +87,18 @@ def comparison(vec_cms_input, vec_cms_output, suptitle):
     plt.xlabel("CMS Patch")
     plt.ylabel("Intensity")
     plt.title("Output")
-    plt.suptitle(suptitle)
-    plt.tight_layout()
 
-    # plt.figure(figsize=(5, 6))
     for _i, _color_i in enumerate(["red", "green", "blue"]):
         plt.subplot(3, 2, 2 * (_i + 1))
         plt.plot(vec_cms_input[:, _i], label="input")
         plt.plot(vec_cms_output[:, _i], "--", label="output")
-        plt.title(_color_i)
+        plt.title(_color_i + " (Norm = {0:.3f})".format(vec_norm[_i]))
         plt.ylim(-2, 12)
         plt.grid()
         plt.legend()
         plt.xlabel("CMS Patch")
         plt.ylabel("Output")
-    plt.suptitle(suptitle)
+    plt.suptitle(suptitle + " (Norm = {0:0.2f})".format(np.linalg.norm(vec_norm)))
     plt.tight_layout()
 
     plt.figure(figsize=(8, 8))
@@ -145,7 +144,5 @@ if __name__ == "__main__":
     comparison(vec_cms_input, vec_calib, "calibrated (simu.)")
 
     print("matrix M:", matrix_m)
-    print("norm(before)", np.linalg.norm(vec_cms_input - vec_cms_output))
-    print("norm(after) ", np.linalg.norm(vec_cms_input - vec_calib))
 
     plt.show()
