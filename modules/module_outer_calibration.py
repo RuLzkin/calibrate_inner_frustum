@@ -3,7 +3,8 @@ from numpy import ndarray
 from scipy.optimize import least_squares
 from matplotlib import pyplot as plt
 import cv2
-from module_load_exr import load_exr
+from .module_load_exr import load_exr
+from .module_extract_cc_gui import ColorcheckerExtractor
 
 
 def calculate_matrix_q(list_mat_s: list, mat_cc: ndarray, w_avg: ndarray) -> ndarray:
@@ -156,26 +157,25 @@ if __name__ == "__main__":
     img_cc_r = load_exr("CAL_OuterFrustum_v01_dR.exr")
     img_cc_g = load_exr("CAL_OuterFrustum_v01_dG.exr")
     img_cc_b = load_exr("CAL_OuterFrustum_v01_dB.exr")
-    img_cc_ref = load_exr("OuterCheck_Ref.exr")
+    img_cc_t = load_exr("OuterCheck_Ref.exr")
 
-    shape_trans = int(img_cc_w.shape[1]), int(img_cc_w.shape[0])
+    processor = ColorcheckerExtractor(img_cc_w)
+    pts_src = processor.get_four_points()
+    processor = ColorcheckerExtractor(img_cc_t)
+    pts_src_ref = processor.get_four_points()
 
-    pts_src = np.float32(
-        [[250, 179], [654, 184], [205, 555], [628, 578]])
-    pts_src_ref = np.float32(
-        [[1949, 2068], [2630, 2084], [1941, 2526], [2622, 2535]])
-    pts_dst = np.float32(
-        [[0, 0], [shape_trans[0], 0], [0, shape_trans[1]], [shape_trans[0], shape_trans[1]]])
+    shape_trans = processor.shape_transform()
+    pts_dst = processor.coords_dst()
 
     mat_extracted_w = colorchecker2colors(img_cc_w, pts_src, pts_dst, shape_trans, "CAL_OuterFrustum_v01_dW.exr", show_preview=True)
     mat_extracted_r = colorchecker2colors(img_cc_r, pts_src, pts_dst, shape_trans, "CAL_OuterFrustum_v01_dR.exr", show_preview=True)
     mat_extracted_g = colorchecker2colors(img_cc_g, pts_src, pts_dst, shape_trans, "CAL_OuterFrustum_v01_dG.exr", show_preview=True)
     mat_extracted_b = colorchecker2colors(img_cc_b, pts_src, pts_dst, shape_trans, "CAL_OuterFrustum_v01_dB.exr", show_preview=True)
-    mat_extracted_ref = colorchecker2colors(img_cc_ref, pts_src_ref, pts_dst, shape_trans, "OuterCheck_Ref.exr", show_preview=True)
+    mat_extracted_t = colorchecker2colors(img_cc_t, pts_src_ref, pts_dst, shape_trans, "OuterCheck_Ref.exr", show_preview=True)
 
-    mat_extracted_ref = mat_extracted_ref / np.max(mat_extracted_ref)
+    mat_extracted_t = mat_extracted_t / np.max(mat_extracted_t)
 
-    mat_cc = mat_extracted_ref.reshape((1, 24, 3)).squeeze().T
+    mat_cc = mat_extracted_t.reshape((1, 24, 3)).squeeze().T
     vec_rgb_w = mat_extracted_w.reshape((1, 24, 3)).squeeze().T
     vec_rgb_r = mat_extracted_r.reshape((1, 24, 3)).squeeze().T
     vec_rgb_g = mat_extracted_g.reshape((1, 24, 3)).squeeze().T
@@ -195,10 +195,10 @@ if __name__ == "__main__":
 
     img_calibrated = func_fit(mat_q.ravel(), list_mat_s, np.zeros_like(mat_cc), w_avg).reshape((3, 4, 6)).transpose((1, 2, 0))
 
-    comparison(mat_extracted_ref, mat_extracted_w, img_cc_w, img_cc_ref, img_calibrated)
+    comparison(mat_extracted_t, mat_extracted_w, img_cc_w, img_cc_t, img_calibrated)
 
     print("matrix Q:\n", mat_q)
-    print("norm(before)", np.linalg.norm(mat_extracted_w - mat_extracted_ref))
-    print("norm(after) ", np.linalg.norm(img_calibrated - mat_extracted_ref))
+    print("norm(before)", np.linalg.norm(mat_extracted_w - mat_extracted_t))
+    print("norm(after) ", np.linalg.norm(img_calibrated - mat_extracted_t))
 
     plt.show()
